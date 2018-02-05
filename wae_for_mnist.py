@@ -7,6 +7,8 @@ from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
 import torchvision
 import itertools
+from torch.optim.lr_scheduler import LambdaLR
+from torchvision.utils import save_image
 
 
 class Encoder(nn.Module):
@@ -209,6 +211,9 @@ def run():
                     epoch, batch_idx * len(data), len(pretrain_data_loader.dataset),
                            100. * batch_idx / len(pretrain_data_loader), loss_pretrain.data[0]
                 ))
+        # save the pretrain model at the last epoch
+        if epoch == 200:
+            torch.save(encoder.state_dict(), 'Pretrain_Encoder_epoch{:02d}.pth'.format(epoch))
 
     # train models
     d_loss_function = nn.BCEWithLogitsLoss()
@@ -226,6 +231,10 @@ def run():
         return (loss_adversary, logits_qz, logits_pz), loss_penalty
 
     def train(epoch):
+        for param_group in optimizer_ae.param_groups:
+            print(param_group['lr'], "learning rate for Auto-Encoder.")
+        for param_group in optimizer_d.param_groups:
+            print(param_group['lr'], "learning rate for Discriminator.")
         encoder.train(), decoder.train(), discriminator.train()
         for batch_idx, (data, _) in enumerate(train_data_loader):
             if torch.cuda.is_available():
@@ -261,12 +270,32 @@ def run():
                     epoch, batch_idx * len(data), len(train_data_loader.dataset),
                            100. * batch_idx / len(train_data_loader), loss_wae.data[0], loss_adv.data[0]
                 ))
+        # save images and save models
+        save_image(data.cpu().data, 'real_image_{:02d}.png'.format(epoch), nrow=10)
+        save_image(recon_x.cpu().data, 'recon_image_{:02d}.png'.format(epoch), nrow=10)
+        save_image(decoded.cpu().data, 'sample_image_{:02d}.png'.format(epoch), nrow=10)
+        if epoch % 50 == 0:
+            torch.save(encoder.state_dict(), 'encoder_{:02d}.pth'.format(epoch))
+            torch.save(decoder.state_dict(), 'decoder_{:02d}.pth'.format(epoch))
+            torch.save(discriminator.state_dict(), 'discriminator_{:02d}.pth'.format(epoch))
+
+    # add the learning rate adjust function
+    def adjust_learning_rate_manual(optimizer, epoch):
+        for param_group in optimizer.param_groups:
+            if epoch == 30:
+                param_group['lr'] /= 2.
+            elif epoch == 50:
+                param_group['lr'] /= 5.
+            elif epoch == 100:
+                param_group['lr'] /= 10.
 
     print("=========> Pretrain encoder")
-    for epoch in range(pretrain_epochs):
+    for epoch in range(1, pretrain_epochs+1):
         encoder_pretrain(epoch)
     print("=========> Train models")
-    for epoch in range(epochs):
+    for epoch in range(1, epochs+1):
+        adjust_learning_rate_manual(optimizer_ae, epoch)
+        adjust_learning_rate_manual(optimizer_d, epoch)
         train(epoch)
 
 
