@@ -7,7 +7,6 @@ from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
 import torchvision
 import itertools
-from torch.optim.lr_scheduler import LambdaLR
 from torchvision.utils import save_image
 
 
@@ -125,7 +124,7 @@ def run():
     batch_size = 100
     e_pretrain_batch_size = 1000
     pretrain_epochs = 200
-    epochs = 100
+    epochs = 200
     z_size = 8
     lam = 10
 
@@ -163,6 +162,13 @@ def run():
         num_filters=g_num_filters, num_layers=g_num_layers, z_size=z_size, output_shape=28
     )
     discriminator = Adversary_z(num_filters=d_num_filters, num_layers=d_num_layers, z_size=z_size)
+
+    # load model parameters
+    # encoder.load_state_dict(torch.load('Pretrain_Encoder_epoch200.pth'))
+    # encoder.load_state_dict(torch.load('encoder_100.pth'))
+    # decoder.load_state_dict(torch.load('decoder_100.pth'))
+    # discriminator.load_state_dict(torch.load('discriminator_100.pth'))
+
     if torch.cuda.is_available():
         encoder, decoder, discriminator = encoder.cuda(), decoder.cuda(), discriminator.cuda()
 
@@ -285,9 +291,9 @@ def run():
             if epoch == 30:
                 param_group['lr'] /= 2.
             elif epoch == 50:
-                param_group['lr'] /= 5.
+                param_group['lr'] /= 2.5
             elif epoch == 100:
-                param_group['lr'] /= 10.
+                param_group['lr'] /= 2.
 
     print("=========> Pretrain encoder")
     for epoch in range(1, pretrain_epochs+1):
@@ -299,5 +305,5 @@ def run():
         train(epoch)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__"w:
     run()
