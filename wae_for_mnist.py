@@ -305,5 +305,5 @@ def run():
         train(epoch)
 
 
-if __name__ == "__main__"w:
+if __name__ == "__main__":
     run()
