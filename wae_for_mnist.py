@@ -124,7 +124,7 @@ def run():
     batch_size = 100
     e_pretrain_batch_size = 1000
     pretrain_epochs = 200
-    epochs = 200
+    epochs = 100
     z_size = 8
     lam = 10
 
@@ -300,8 +300,9 @@ def run():
         encoder_pretrain(epoch)
     print("=========> Train models")
     for epoch in range(1, epochs+1):
-        adjust_learning_rate_manual(optimizer_ae, epoch)
-        adjust_learning_rate_manual(optimizer_d, epoch)
+        # do not need to use adjust_learning_rate in mnist
+        # adjust_learning_rate_manual(optimizer_ae, epoch)
+        # adjust_learning_rate_manual(optimizer_d, epoch)
         train(epoch)
 
 
